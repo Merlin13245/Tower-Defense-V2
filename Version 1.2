@@ -1,0 +1,269 @@
+//Collections is used to manipulate data in order to make targeting easier
+import java.util.Collections;
+//"List" is similar to ArrayList, its a dynamic data structure
+
+//Stage keeps track of what level the player is on, if 0 then main menu. This is also used for all kinds of other operations
+int stage = 1;
+
+//This list is for storing the massive number of Target objects I will be creating.
+ArrayList<Target> TargetList = new ArrayList<Target>();
+//This list is for storing the massive number of PlasmaShot objects I will be creating.
+ArrayList<Target> PlasmaShotList = new ArrayList<Target>();
+
+//PImages are the backgrounds for each screen (main, stages, etc)
+PImage Stage1;
+
+//Creating objects
+PlasmaTower PlasmaTower1;
+Target Target1;
+PlasmaShot PlasmaShot1;
+
+void setup(){
+  //This size is perfect for a full screen window on my laptop
+  size(1350,700);
+  
+  //Setting the draw modes for easy shap drawing
+  rectMode(CENTER);
+  ellipseMode(CENTER);
+  
+  //Loading the background images, the file must be in the workspace of the project to properly load
+  Stage1 = loadImage("Stage1.png");
+  
+  //Creating objects
+  PlasmaTower1 = new PlasmaTower();
+  Target1 = new Target();
+  PlasmaShot1 = new PlasmaShot();
+  
+  //New PVector declarations
+  PlasmaShot1.getPVector();
+  Target1.getPVector();
+  
+  //Itilization of several object variables in order to avoid nullpointerexceptions
+  Target1.setTarget(3);
+  PlasmaShot1.setTarget(0,0);
+
+  
+}
+
+void draw(){
+
+  //Setting the background based on what level the player is on.
+  if(stage == 1){
+    image(Stage1,0,0);
+  }
+  
+  //I have these functions here for temparary testing
+  PlasmaTower1.drawTower();
+  PlasmaShot1.setTarget(400,400);
+  Target1.drawTarget(stage);
+  
+}
+
+//Method looks for a mouse press and performs functions based on where the mouse is.
+void mousePressed(){
+  PlasmaTower1.setLocation();
+}
+
+
+
+
+
+
+
+
+
+
+//Class for the shots from the Plasma Tower, this is in its own class for easy referencing
+class PlasmaShot {
+   //Floats that store the location of the shot, default is set to -100 -100 so that the tower does not show at the start of the game.
+   float x = -100;
+   float y = -100;
+   
+   //Local PVector so I dont have to create a million of these
+   PVector TargetVector;
+   
+   //This float stores the speed of the shot.
+   float PlasmaShot_speed = 3.0f;
+   
+  void getPVector(){
+    TargetVector = new PVector();
+  }
+   
+   //Method moves the shot toward that target.
+   void shoot(){
+     //This if statment check for if the shot has been moved from its orignal location, meaning the tower it is tied to has been moved. This will then allow the shot to start moving towards targets
+     if(TargetVector.x != -100){
+       //New pvector calculates the path between the target and the shot, this does not tell where to move, only creates a path between the target and the shot.
+       PVector Targeting = PVector.sub(TargetVector, Target1.getVector());
+       //This pvector function helps to make the shot appear as expected
+       Targeting.normalize();
+       //This pvector function changes the speed by the float created above
+       Targeting.mult(PlasmaShot_speed);
+       //This functions tell the shot which direction to go.
+       TargetVector.add(Targeting);
+       
+       //This draws the shot, see function below
+       drawShot(TargetVector.x, TargetVector.y);
+       
+       //This if statement check for if the shot as hit a target
+       if(TargetVector.x >= TargetVector.x - 10 && TargetVector.y >= TargetVector.y - 10 && TargetVector.x <= TargetVector.x + 10 && TargetVector.y <= TargetVector.y + 10){
+         //Calls the hit function on the target
+         
+         //Reset the location of the shot back to -100 -100 so it does not shoot again unless called.
+         TargetVector.set(x,y);
+       }
+     }
+   }
+   
+   //Drawing the bullet based on location
+   void drawShot(float x, float y){
+     fill(0,0,200);
+     stroke(100,0,200);
+     strokeWeight(2);
+     ellipse(x,y,10,10);
+   }
+ 
+   //This method sets the PVector for the shot so it can hit the target.
+   void setTarget(float setX, float setY){
+     TargetVector.set(setX,setY);
+   }
+   
+   
+}
+
+
+
+
+
+
+
+
+
+
+
+//Plasma Tower class, stores everything needed to create a plasma tower.
+class PlasmaTower {
+
+  //Floats that store the location of the tower, default is set to -100 -100 so that the tower does not show at the start of the game.
+  float x = -100;
+  float y = -100;
+  
+  //This method returns the x location of the tower, this is for the shot to use when reseting itself
+  float getX(){
+    return x;
+  }
+  
+  //This method returns the x location of the tower, this is for the shot to use when reseting itself
+  float getY(){
+    return y;
+  }
+  
+  //This functions sets the location of the tower, this has to be seperate so that the tower can continue to be drawn over the background. 
+  void setLocation(){
+    //If statement check to see that the tower is not on block (a path) before allowing the user to place it down.
+    if(get(mouseX - 20 , mouseY - 20) != -16777216 && get(mouseX - 20 , mouseY + 20) != -16777216 && get(mouseX + 20 , mouseY - 20) != -16777216 && get(mouseX + 20 , mouseY + 20) != -16777216 ){
+    //setting the location of the tower.
+    x = mouseX;
+    y = mouseY;
+    }
+  }
+  
+  //This function draws the tower at the x and y values
+  void drawTower() {
+    fill(175);
+    rect(x,y,40,40);
+    fill(200,0,0);
+    ellipse(x,y,20,20);
+    stroke(200,0,0);
+    strokeWeight(3);
+    line(x,y,x+20,y+20);
+    line(x,y,x-20,y-20);
+    line(x,y,x+20,y-20);
+    line(x,y,x-20,y+20);
+    stroke(0);
+  }
+  
+}
+
+
+
+
+
+
+
+
+//Generic Target, can be set to any difficulty
+class Target {
+
+  //"hitpoints" stores how many hits the target can take before dying
+  int hitpoints;
+  //Local PVector to store object location
+  PVector Target;  
+  
+  void getPVector(){
+    Target = new PVector();
+  }
+  
+  //setting the target for the start of the game
+  void setTarget(float X, float Y){
+    Target.x = X;
+    Target.y = Y;
+  }
+  
+  //Basic function built as a setup() for the target
+  void setTarget(int hits){
+    hitpoints = hits;
+  }
+  
+  //Returning the location of the target for targeting in the shot class  
+  PVector getVector(){
+    return Target;
+  }
+  
+//Drawing the target with added movement
+  void drawTarget(int stage){
+    //Getting the pathing from the many functions below
+    if(stage == 1){
+      //must set both x and y for the tower.
+      Target.x = Stage1X(Target.x, Target.y);
+      Target.y = Stage1Y(Target.x, Target.y);
+    }
+    //Drawing the actual target
+    fill(240,0,0);
+    stroke(100,0,0);
+    strokeWeight(3);
+    ellipse(Target.x,Target.y,30,30);
+    stroke(0);
+    strokeWeight(1);
+  }
+
+}
+
+//Stage 1 pathing for X values, DONT MESS WITH THIS IS THE TARGETS WILL NOT FOLLOW THE PATH ON STAGE 1!
+float Stage1X(float x,float y){
+  if(x < 290){
+    x++;
+    return x;
+  } else if(x > 290){
+    x = x + 1;
+    return x;
+  }
+  if(y == 535){
+    x++;
+  } 
+  return x;
+
+    
+}
+
+//Stage 1 pathing for Y values, DONT MESS WITH THIS IS THE TARGETS WILL NOT FOLLOW THE PATH ON STAGE 1!
+float Stage1Y(float x,float y){
+  if(x == 290 && y < 535){
+    y++;
+    return y;
+  } else if(x > 290){
+    y = y - 0.4;
+    return y;
+  } else
+  return 135;
+}
